@@ -16,7 +16,7 @@ class NestedBottleNeckResidualBlock(Module):
     Definition of a nested bottleneck residual block.
     """
 
-    def __init__(self, channels, act_type: str):
+    def __init__(self, channels, act_type: str, use_se: bool = False):
         super(NestedBottleNeckResidualBlock, self).__init__()
 
         self.inConv = Conv2d(in_channels=channels, out_channels=channels/2, kernel_size=(1, 1), padding=(0, 0))
