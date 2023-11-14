@@ -11,11 +11,13 @@ Copy and rename this file to main_config.py and adjust the paths accordingly.
 
 # define the default dir where the training data in plane representation is located
 # e.g. for supervised learning default_dir = "/data/planes/"
-default_dir = "/data/RL/export/"
+default_dir = "/data/"
 
 if default_dir[-1] != "/":
     default_dir = default_dir + "/"
 
+sl_dir = default_dir + "SL/"
+pgn_dir = default_dir + "pgn/"
 
 main_config = {
     # Copy and rename this file to main_config.py
@@ -33,16 +35,16 @@ main_config = {
     # The mate_in_one directory includes games from the month:      lichess_db_standard_rated_2015-08.pgn
 
     # The pgn directories contain all files which are converted to plane representation
-    "pgn_train_dir": "/home/demo_user/datasets/lichess/Crazyhouse/pgn/train/",
-    "pgn_val_dir": "/home/demo_user/datasets/lichess/Crazyhouse/pgn/val/",
-    "pgn_test_dir": "/home/demo_user/datasets/lichess/Crazyhouse/pgn/test/",
-    "pgn_mate_in_one_dir": "/home/demo_user/datasets/lichess/Crazyhouse/pgn/mate_in_one/",
+    "pgn_train_dir": pgn_dir + "train/",
+    "pgn_val_dir": pgn_dir + "val/",
+    "pgn_test_dir": pgn_dir + "test/",
+    "pgn_mate_in_one_dir": pgn_dir + "mate_in_one/",
     # The plane directories contain the plane representation of the converted board state
     #  (.zip files which have been compressed by  the python zarr library)
-    "planes_train_dir": default_dir + "train/",
-    "planes_val_dir": default_dir + "val/",
-    "planes_test_dir": default_dir + "test/",
-    "planes_mate_in_one_dir": default_dir + "mate_in_one/",
+    "planes_train_dir": sl_dir + "train/",
+    "planes_val_dir": sl_dir + "val/",
+    "planes_test_dir": sl_dir + "test/",
+    "planes_mate_in_one_dir": sl_dir + "mate_in_one/",
 
     # The rec directory contains the plane representation which are used in the training loop of the network
     # use the the notebook create_rec_dataset to generate the .rec files:
