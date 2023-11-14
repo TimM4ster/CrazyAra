@@ -19,17 +19,17 @@ class NestedBottleNeckResidualBlock(Module):
     def __init__(self, channels, act_type: str, use_se: bool = False):
         super(NestedBottleNeckResidualBlock, self).__init__()
 
-        self.inConv = Conv2d(in_channels=channels, out_channels=channels/2, kernel_size=(1, 1), padding=(0, 0))
+        self.inConv = Conv2d(in_channels=channels, out_channels=int(channels/2), kernel_size=(1, 1), padding=(0, 0))
 
-        self.outConv = Conv2d(in_channels=channels/2, out_channels=channels, kernel_size=(1, 1), padding=(0, 0))
+        self.outConv = Conv2d(in_channels=int(channels/2), out_channels=channels, kernel_size=(1, 1), padding=(0, 0))
 
-        self.bnormhalfc = BatchNorm2d(num_features=channels/2)
+        self.bnormhalfc = BatchNorm2d(num_features=int(channels/2))
 
         self.bnormc = BatchNorm2d(num_features=channels)
 
         self.act = get_act(act_type)
 
-        self.intermediate_block = IntermediateResidualBlock(channels=channels/2, act_type=act_type)
+        self.intermediate_block = IntermediateResidualBlock(channels=int(channels/2), act_type=act_type)
 
         self.body = Sequential(
             self.inConv,
