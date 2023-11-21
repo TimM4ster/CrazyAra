@@ -42,7 +42,9 @@ class NestedBottleNeckResidualBlock(Module):
             self.act
         )
 
-        if self.use_se:
+        self.use_se = use_se
+
+        if use_se:
             self.se = get_se(se_type="se", channels=channels, use_hard_sigmoid=False)
 
     def forward(self, x):
