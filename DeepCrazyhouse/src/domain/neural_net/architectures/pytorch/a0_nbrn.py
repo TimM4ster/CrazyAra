@@ -9,7 +9,7 @@ Inspired by the usage in KataGo after v1.13.0. Diagram and inspiration of the ar
 https://github.com/lightvector/KataGo/blob/master/docs/KataGoMethods.md#nested-bottleneck-residual-nets
 """
 from torch.nn import Sequential, Conv2d, BatchNorm2d, Module
-from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.builder_util import get_act, _Stem, _ValueHead, _PolicyHead, process_value_policy_head
+from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.builder_util import get_act, _Stem, _ValueHead, _PolicyHead, process_value_policy_head, get_se
 
 class NestedBottleNeckResidualBlock(Module):
     """
@@ -42,10 +42,16 @@ class NestedBottleNeckResidualBlock(Module):
             self.act
         )
 
+        if self.use_se:
+            self.se = get_se(se_type="se", channels=channels, use_hard_sigmoid=False)
+
     def forward(self, x):
         residual = x
 
         out = self.body(x)
+
+        if self.use_se:
+            out = self.se(out)
 
         return self.act(out + residual)
 
@@ -136,3 +142,23 @@ class AlphaZeroNBRN(Module):
         out = self.body(x)
 
         return process_value_policy_head(out, self.value_head, self.policy_head, self.use_plys_to_end, self.use_wdl)
+    
+
+def get_nbrn_alpha_zero_model(args):
+    return AlphaZeroNBRN(
+        n_labels=args.n_labels,
+        channels=args.channels,
+        nb_input_channels=args.nb_input_channels,
+        board_height=args.board_height,
+        board_width=args.board_width,
+        channels_value_head=args.channels_value_head,
+        channels_policy_head=args.channels_policy_head,
+        num_res_blocks=args.num_res_blocks,
+        value_fc_size=args.value_fc_size,
+        act_type=args.act_type,
+        select_policy_from_plane=args.select_policy_from_plane,
+        use_wdl=args.use_wdl,
+        use_plys_to_end=args.use_plys_to_end,
+        use_mlp_wdl_ply=args.use_mlp_wdl_ply,
+        use_se=args.use_se,
+    )
