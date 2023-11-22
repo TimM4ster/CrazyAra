@@ -74,5 +74,5 @@ main_config = {
     #                   1: MODE_LICHESS       (all available lichess variants) available versions [1, 2 (last_moves), 3 (last_moves+fx-features)]
     #                   2: MODE_CHESS         (chess only mode, with 960) available versions [1, 2, 3]
     "mode": 2,
-    "version": 1,
+    "version": 3,
 }
