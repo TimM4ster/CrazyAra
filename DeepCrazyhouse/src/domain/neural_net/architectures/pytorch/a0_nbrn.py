@@ -16,7 +16,7 @@ class NestedBottleNeckResidualBlock(Module):
     Definition of a nested bottleneck residual block.
     """
 
-    def __init__(self, channels, act_type: str, use_se: bool = False):
+    def __init__(self, channels, act_type: str, use_se: bool = False, kernel_size: int = 3, res_block_shape=(2, 2)):
         super(NestedBottleNeckResidualBlock, self).__init__()
 
         self.inConv = Conv2d(in_channels=channels, out_channels=int(channels/2), kernel_size=(1, 1), padding=(0, 0))
@@ -29,17 +29,25 @@ class NestedBottleNeckResidualBlock(Module):
 
         self.act = get_act(act_type)
 
-        self.intermediate_block = IntermediateResidualBlock(channels=int(channels/2), act_type=act_type)
+        num_intermediate_res_blocks = res_block_shape[0]
+
+        self.intermediate_block = IntermediateResidualBlock(channels=int(channels/2), act_type=act_type, kernel_size=kernel_size, num_blocks=res_block_shape[1])
+
+        layers = []
+        layers.append(self.inConv)
+        layers.append(self.bnormhalfc)
+        layers.append(self.act)
+
+        for _ in range(num_intermediate_res_blocks):
+            layers.append(self.intermediate_block)
+
+        layers.append(self.outConv)
+        layers.append(self.bnormc)
+        layers.append(self.act)
+
 
         self.body = Sequential(
-            self.inConv,
-            self.bnormhalfc,
-            self.act,
-            self.intermediate_block,
-            self.intermediate_block,
-            self.outConv,
-            self.bnormc,
-            self.act
+            *layers
         )
 
         self.use_se = use_se
@@ -63,24 +71,24 @@ class IntermediateResidualBlock(Module):
     Definition of a residual block inside the nested bottleneck residual block. 
     """
 
-    def __init__(self, channels, act_type: str):
+    def __init__(self, channels, act_type: str, kernel_size: int = 3, num_blocks: int = 2):
         super(IntermediateResidualBlock, self).__init__()
 
-        self.conv = Conv2d(in_channels=channels, out_channels=channels, kernel_size=(3, 3), padding=(1, 1))
+        self.conv = Conv2d(in_channels=channels, out_channels=channels, kernel_size=(kernel_size, kernel_size), padding=(1, 1))
 
         self.bnorm = BatchNorm2d(num_features=channels)
 
         self.act = get_act(act_type)
 
+        self.num_blocks = num_blocks
+
     def forward(self, x):
         residual = x
 
-        out = self.conv(x)
-        out = self.bnorm(out)
-        out = self.act(out)
-
-        out = self.conv(out)
-        out = self.bnorm(out)
+        for i in range(self.num_blocks):
+            out = self.conv(x)
+            out = self.bnorm(out)
+            out = self.act(out) if i < self.num_blocks - 1 else out
 
         return self.act(out + residual)
 
@@ -98,13 +106,14 @@ class AlphaZeroNBRN(Module):
         board_width=8,
         channels_value_head=8,
         channels_policy_head=81,
-        num_res_blocks=19,
         value_fc_size=256,
         act_type="relu",
         select_policy_from_plane=False,
         use_wdl=False, use_plys_to_end=False,
         use_mlp_wdl_ply=False,
         use_se=False,
+        kernel_size=3,
+        res_block_shape=(19, 2, 2)
     ):
         """
         :param n_labels: Number of labels the for the policy
@@ -119,9 +128,11 @@ class AlphaZeroNBRN(Module):
         self.use_plys_to_end = use_plys_to_end
         self.use_wdl = use_wdl
 
+        num_res_blocks = res_block_shape[0]
+
         res_blocks = []
         for _ in range(num_res_blocks):
-            res_blocks.append(NestedBottleNeckResidualBlock(channels, act_type, use_se))
+            res_blocks.append(NestedBottleNeckResidualBlock(channels, act_type, use_se, kernel_size, res_block_shape[1:]))
 
         self.body = Sequential(_Stem(channels=channels, act_type=act_type,
                                      nb_input_channels=nb_input_channels),
