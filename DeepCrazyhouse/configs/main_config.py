@@ -5,7 +5,7 @@ Created on 24.09.18
 @author: queensgambit
 
 Main Config definition file used for the project.
-Copy and rename this file to main_config.py and adjust the paths accordingly.
+Adjust the paths accordingly.
 """
 
 
@@ -20,8 +20,6 @@ sl_dir = default_dir + "SL/"
 pgn_dir = default_dir + "pgn/"
 
 main_config = {
-    # Copy and rename this file to main_config.py
-
     # Crazyhouse - LichessDB
     # The training directory includes games from the months:        2016-01 - 2018-07 (excluding 2018-04 and 2018-08)
     # The validation directory includes games from the month:       2018-04
@@ -47,7 +45,7 @@ main_config = {
     "planes_mate_in_one_dir": sl_dir + "mate_in_one/",
 
     # The rec directory contains the plane representation which are used in the training loop of the network
-    # use the the notebook create_rec_dataset to generate the .rec files:
+    # use the notebook create_rec_dataset to generate the .rec files:
     # (Unfortunately when trying to start training with the big dataset a memory overflow occurred.
     # therefore the old working solution was used to train the latest model by loading the dataset via batch files)
     #  "train.idx", "val.idx", "test.idx", "mate_in_one.idx", "train.rec", "val.rec", "test.rec", "mate_in_one.rec"
