@@ -30,6 +30,7 @@ from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.vit_configs impo
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.next_vit_official import NextVit, get_next_vit_model
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.a0_resnet import AlphaZeroResnet, get_alpha_zero_model
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.alpha_vile import get_alpha_vile_model
+from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.a0_nbrn import get_nbrn_alpha_zero_model, AlphaZeroNBRN
 from DeepCrazyhouse.configs.train_config import TrainConfig, TrainObjects
 from DeepCrazyhouse.configs.model_config import ModelConfig
 from DeepCrazyhouse.src.preprocessing.dataset_loader import load_pgn_dataset
@@ -132,6 +133,15 @@ def get_custom_model(model_type: str, args: Args):
             use_simple_transformer_blocks=False,
         )
         return model
+    elif model_type == 'a0_nbrn':
+        model = AlphaZeroNBRN(n_labels=args.n_labels, channels=mc.channels, nb_input_channels=args.input_shape[0],
+                              board_height=args.input_shape[1], board_width=args.input_shape[2],
+                              channels_value_head=mc.channels_value_head, channels_policy_head=args.channels_policy_head,
+                              num_res_blocks=mc.num_res_blocks, value_fc_size=mc.value_fc_size, act_type='relu',
+                              select_policy_from_plane=args.select_policy_from_plane, use_wdl=args.use_wdl,
+                              use_plys_to_end=args.use_plys_to_end, use_mlp_wdl_ply=args.use_mlp_wdl_ply,
+                              use_se=mc.use_se)
+        return model
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 
@@ -158,6 +168,8 @@ def get_default_model(model_type: str, args: Args):
         return get_alpha_vile_model(args, model_size='large')
     elif model_type == 'nextVit':
         return get_next_vit_model(args)
+    elif model_type == 'a0_nbrn':
+        return get_nbrn_alpha_zero_model(args)
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 
