@@ -3,3 +3,4 @@ python-chess
 mxnet
 onnx==1.3.0
 pandas
+nni
