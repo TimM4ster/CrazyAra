@@ -4,3 +4,4 @@ mxnet
 onnx==1.3.0
 pandas
 nni
+pytorch_lightning
