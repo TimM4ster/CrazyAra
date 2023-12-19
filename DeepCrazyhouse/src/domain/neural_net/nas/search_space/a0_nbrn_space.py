@@ -8,7 +8,6 @@ Neural Architecture Search model space for A0-NBRN
 """
 from nni.nas.nn.pytorch import ModelSpace, LayerChoice, ParametrizedModule, Repeat
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.builder_util import get_act, _Stem, _ValueHead, _PolicyHead, process_value_policy_head
-from DeepCrazyhouse.src.domain.neural_net.architectures.a0_resnet import ResidualBlock
 from torch.nn import Module, Sequential, Conv2d, BatchNorm2d
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.builder_util import get_act
 
@@ -43,7 +42,7 @@ class AlphaZeroSearchSpace(ModelSpace):
 
         # TODO 3: Check whether *res_blocks works properly
         self.body = Sequential(
-            _Stem(board_height, board_width, channels),
+            _Stem(channels=channels, act_type=act_type, nb_input_channels=52),
             *res_blocks
         )
 
@@ -52,7 +51,7 @@ class AlphaZeroSearchSpace(ModelSpace):
             board_width,
             channels,
             channels_value_head=8,
-            value_fc_size=256,
+            fc0=256,
             act_type = "relu",
             use_raw_features=False,
             nb_input_channels=52,
@@ -65,7 +64,7 @@ class AlphaZeroSearchSpace(ModelSpace):
             board_height, 
             board_width, 
             channels, 
-            channels_policy_head=81, 
+            policy_channels=81, 
             n_labels=64992,
             act_type = "relu", 
             select_policy_from_plane=False
@@ -99,7 +98,7 @@ class NestedBottleneckResidualBlock(Module):
             act_type=act_type
         )
 
-        intermediate_block = IntermediateBlock(
+        intermediate_block = ResidualBlock(
             channels=int(channels / 2), 
             act_type=act_type
         )
@@ -151,10 +150,10 @@ class ReductionOrExpantionBlock(Module):
         return self.body(x)
 
 
-class IntermediateBlock(Module):
+class ResidualBlock(Module):
     # TODO 2: DOCSTRING
     def __init__(self, channels: int = 256, act_type: str = "relu"):
-        super(IntermediateBlock, self).__init__()
+        super(ResidualBlock, self).__init__()
 
         conv = Conv2d(
             in_channels=channels, 
