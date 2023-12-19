@@ -10,6 +10,11 @@ Provides a command-line interface to run neural architecture search using nni. F
 * CrazyAra/DeepCrazyhouse/configs/nas_config.py
 """
 import argparse
+import sys
+
+sys.path.insert(0, '../../../../../../')
+
+from DeepCrazyhouse.src.runtime.color_logger import enable_color_logging
 from nni.nas.experiment import NasExperiment, NasExperimentConfig
 from nni.nas.evaluator import FunctionalEvaluator
 from DeepCrazyhouse.src.domain.neural_net.nas.nni_search_cli_util import *
@@ -33,23 +38,23 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--evaluator", 
+        "--category",
         type=str,
-        help="Defines the evaluator for the neural architecture search. Parsed argument should match name of file in:"
-        "CrazyAra/DeepCrazyhouse/src/domain/neural_net/nas/evaluator/."
+        help="Defines the category of the neural architecture search, specifically the category of the exploration strategy. Currently, only the categories \"multi_trial\" and \"one_shot\" are supported. Note that the evaluator is selected accordingly."
         "For more information please refer to documentation in README.",
-        default="default_evaluator"
+        default="one_shot"
     )
 
     parser.add_argument(
         "--search-strategy", 
         type=str,
         help="Defines the search strategy for the neural architecture search. Parsed argument should be one of the following:"
-        "random, grid, evolution, tpe, pbrl, darts, enas, gumbeldarts, random_one_shot, proxyless."
+        "random, grid, evolution, tpe, pbrl, darts, enas, gumbeldarts, random_one_shot, proxyless. Other search strategies are not supported."
         "For more information please refer to documentation in README.",
         default="darts"
     )
 
+    # TODO: Review and potentially remove
     parser.add_argument(
         "--name-initials", 
         type=str, 
@@ -57,6 +62,7 @@ def parse_args():
         default="XX"
     )
 
+    # TODO: Add docstring
     parser.add_argument(
         "--export-dir", 
         type=str, 
@@ -87,29 +93,23 @@ def parse_args():
 
     return parser.parse_args()
 
-def get_from_args(args, param_name):
-    """Update the parameter with the given value if it is not None."""
-    value = getattr(args, param_name)
-    if value is not None:
-        return value
-    else:
-        raise ValueError(f"Parameter {param_name} is None.")
-
 def main():
     # get args
     args = parse_args()
 
+    # enable color logging
+    enable_color_logging()
+
+    # TODO: Add configs for nas and training
+
     # get search space from args
-    search_space = get_search_space_from_name(args.search_space)
+    search_space = get_search_space_from_args(args.search_space)
 
     # get evaluator from args
-    _evaluator = get_evaluator_from_name(args.evaluator)
-    evaluator = FunctionalEvaluator(
-        _evaluator.evaluate_model,
-    )
+    evaluator = get_evaluator_from_args(args.category)
 
     # get search strategy from args
-    search_strategy = get_search_strategy_from_name(args.search_strategy)
+    search_strategy = get_search_strategy_from_args(args.search_strategy)
 
     # get nas config from args
     nas_config = NasExperimentConfig()
@@ -119,7 +119,7 @@ def main():
         search_space,
         evaluator,
         search_strategy, 
-        nas_config
+        #nas_config
     )
 
 if __name__ == "__main__":

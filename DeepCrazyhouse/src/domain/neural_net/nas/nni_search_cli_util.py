@@ -1,10 +1,14 @@
 import logging
 
+import nni.nas.evaluator.pytorch.lightning as pl
 import nni.nas.strategy as nas_strategy
-from DeepCrazyhouse.src.domain.neural_net.nas.search_space.a0_nbrn_space import AlphaZeroSearchSpace
-from DeepCrazyhouse.src.domain.neural_net.nas.evaluator import BaseEvaluator, DefaultEvaluator
 
-def get_search_space_from_name(name: str):
+from DeepCrazyhouse.src.domain.neural_net.nas.search_space.a0_nbrn_space import AlphaZeroSearchSpace
+from DeepCrazyhouse.src.domain.neural_net.nas.evaluator.evaluators import OneShotModule
+from DeepCrazyhouse.src.preprocessing.dataset_loader import load_pgn_dataset
+from DeepCrazyhouse.src.training.trainer_agent_pytorch import get_data_loader
+
+def get_search_space_from_args(name: str):
     """
     Returns the search space from the given input string. 
 
@@ -20,22 +24,33 @@ def get_search_space_from_name(name: str):
     return search_space
     
 
-def get_evaluator_from_name(name: str) -> BaseEvaluator:
+def get_evaluator_from_args(name: str):
     """
-    Returns the evaluator method from the given input string. 
+    Returns the evaluator method from the given category of exploration strategies in the input string. 
 
-    :param name: Name of the evaluator to be returned.
+    :param name: Name of the category of exploration strategies.
     """
     logging.info(f"Setting evaluator \"{name}\"")
 
-    if name == 'default_evaluator':
-        evaluator = DefaultEvaluator()
+    if name == 'multi_trial':
+        # TODO: Implement multi_trial evaluator
+        raise NotImplementedError("Multi trial evaluator not implemented yet.")
+    elif name == 'one_shot':
+        module = OneShotModule()
+        trainer = get_lightning_trainer()
+        train_dataloader = get_train_dataloader()
+        val_dataloader = get_val_dataloader()
+
+        return pl.Lightning(
+            module,
+            trainer,
+            train_dataloader,
+            val_dataloader
+        )
     else:
-        raise ValueError(f"Evaluator {name} not found.")
+        raise ValueError(f"Category {name} not found.")
 
-    return evaluator
-
-def get_search_strategy_from_name(name: str):
+def get_search_strategy_from_args(name: str):
     """
     Returns the search strategy from the given input string.
     For more information, please refer to https://nni.readthedocs.io/en/stable/nas/exploration_strategy.html for more information.
@@ -68,3 +83,57 @@ def get_search_strategy_from_name(name: str):
         raise ValueError(f"Search strategy {name} not found. Please refer to https://nni.readthedocs.io/en/stable/nas/exploration_strategy.html for more information.")
 
     return search_strategy
+
+def get_lightning_trainer():
+    """
+    Returns the lightning trainer used for the neural architecture search.
+
+    :return: Lightning trainer
+    """
+    return pl.Trainer(accelerator='gpu') # TODO: Test if this works. Potentially add training config.
+
+def get_train_dataloader():
+    """
+    Returns the train dataloader.
+
+    :return: DataLoader
+    """
+    _, x, y_value, y_policy, plys_to_end, _ = load_pgn_dataset(
+        "train", 
+        0, 
+        True, 
+        ... # TODO: Check training config for normalize
+    )
+
+    loader = get_data_loader(
+        x, 
+        y_value,
+        y_policy,
+        plys_to_end,
+        ... # TODO: Add training config
+    )
+
+    return loader
+
+def get_val_dataloader():
+    """
+    Returns the validation dataloader.
+
+    :return: DataLoader
+    """
+    _, x, y_value, y_policy, plys_to_end, _ = load_pgn_dataset(
+        "val", 
+        0, 
+        True, 
+        ... # TODO: Check training config for normalize
+    )
+
+    loader = get_data_loader(
+        x, 
+        y_value,
+        y_policy,
+        plys_to_end,
+        ... # TODO: Add training config
+    )
+
+    return loader
