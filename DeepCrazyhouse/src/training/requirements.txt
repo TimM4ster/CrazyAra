@@ -20,3 +20,5 @@ timm
 einops
 ml_collections
 vit_pytorch
+nni
+pytorch_lightning
