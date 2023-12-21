@@ -12,11 +12,12 @@ Provides a command-line interface to run neural architecture search using nni. F
 import argparse
 import sys
 
-sys.path.insert(0, '../../../../../../')
+sys.path.insert(0, '../../../../../')
+
+from nni.nas.experiment import NasExperiment
 
 from DeepCrazyhouse.src.runtime.color_logger import enable_color_logging
-from nni.nas.experiment import NasExperiment, NasExperimentConfig
-from nni.nas.evaluator import FunctionalEvaluator
+from DeepCrazyhouse.configs.nas_config import get_nas_configs
 from DeepCrazyhouse.src.domain.neural_net.nas.nni_search_cli_util import *
 
 def parse_args():
@@ -88,7 +89,7 @@ def parse_args():
         "--port",
         type=int,
         help="Port for the nas experiment visualization.",
-        default=8081
+        default=8080
     )
 
     return parser.parse_args()
@@ -100,19 +101,17 @@ def main():
     # enable color logging
     enable_color_logging()
 
-    # TODO: Add configs for nas and training
+    # configs for nas experiment
+    tc, mc, nc = get_nas_configs(args)
 
     # get search space from args
-    search_space = get_search_space_from_args(args.search_space)
+    search_space = get_search_space_from_args(args.search_space, mc)
 
     # get evaluator from args
-    evaluator = get_evaluator_from_args(args.category)
+    evaluator = get_evaluator_from_args(args.category, tc)
 
     # get search strategy from args
     search_strategy = get_search_strategy_from_args(args.search_strategy)
-
-    # get nas config from args
-    nas_config = NasExperimentConfig()
 
     # create experiment with search space, evaluator, search strategy and config
     exp = NasExperiment(
