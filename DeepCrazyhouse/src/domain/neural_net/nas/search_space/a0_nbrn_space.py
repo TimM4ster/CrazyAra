@@ -9,12 +9,10 @@ Neural Architecture Search model space for A0-NBRN
 from nni.nas.nn.pytorch import ModelSpace, LayerChoice, ParametrizedModule, Repeat
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.builder_util import get_act, _Stem, _ValueHead, _PolicyHead, process_value_policy_head
 from torch.nn import Module, Sequential, Conv2d, BatchNorm2d
-from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.builder_util import get_act
 
 class AlphaZeroSearchSpace(ModelSpace):
     # TODO 1: Add docstring
     
-    # TODO 2: Add more parameters for training agent
     def __init__(
             self,
             board_height: int = 8,
@@ -25,8 +23,6 @@ class AlphaZeroSearchSpace(ModelSpace):
             num_res_blocks : int = 19
     ):
         super(AlphaZeroSearchSpace, self).__init__()
-
-        # TODO 2.1: Add more parameters for training agent
 
         res_blocks = Repeat(
             lambda index: 
