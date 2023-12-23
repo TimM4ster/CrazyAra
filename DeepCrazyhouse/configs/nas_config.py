@@ -24,7 +24,7 @@ def fill_nas_config(nas_config: NasExperimentConfig, args):
     nas_config.experiment_name = args.experiment_name
     pass
 
-def get_nas_configs(args, x_val):
+def get_nas_configs(args, x_val = None):
     """
     Takes the main_config defined in DeepCrazyhouse/configs/main_config.py and appends the necessary configurations for the neural architecture search.
     """
