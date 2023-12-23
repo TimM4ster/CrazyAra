@@ -36,7 +36,7 @@ def _get_train_dataset(tc: TrainConfig, size: int, normalize: bool = False, verb
     datasets = []
     for part_id in range(size):
         if verbose:
-            logging.info(f"Loading training dataset part {part_id} of {size}...")
+            logging.info(f"Loading training dataset part {part_id + 1} of {size}...")
 
         datasets.append(
             _get_tensor_dataset(
@@ -50,7 +50,7 @@ def _get_train_dataset(tc: TrainConfig, size: int, normalize: bool = False, verb
     
     return ConcatDataset(datasets)
 
-def _get_val_dataset(tc: TrainConfig, normalize: bool = False, verbose: bool = True):
+def _get_val_dataset(tc: TrainConfig, size: int, normalize: bool = False, verbose: bool = True):
     """
     TODO
     """
@@ -66,7 +66,7 @@ def _get_tensor_dataset(tc: TrainConfig, dataset_type: str, part_id: int = 0, no
         verbose=verbose,
         normalize=normalize
     )
-    
+
     y_policy_prep = prepare_policy(
         y_policy, 
         tc.select_policy_from_plane, 

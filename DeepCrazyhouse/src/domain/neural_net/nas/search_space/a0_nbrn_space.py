@@ -148,7 +148,7 @@ class ReductionOrExpantionBlock(Module):
 
 class ResidualBlock(Module):
     # TODO 2: DOCSTRING
-    def __init__(self, channels: int = 256, act_type: str = "relu"):
+    def __init__(self, channels: int = 256, act_type: str = "relu", use_se: bool = False):
         super(ResidualBlock, self).__init__()
 
         conv = Conv2d(
