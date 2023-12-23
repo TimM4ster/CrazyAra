@@ -11,6 +11,7 @@ Provides a command-line interface to run neural architecture search using nni. F
 """
 import argparse
 import sys
+import torch
 
 sys.path.insert(0, '../../../../../')
 
@@ -121,8 +122,12 @@ def main():
         #nas_config
     )
 
-    #exp.config.training_service.platform = "remote"
-    exp.run()
+    # check if multi gpu is enabled
+    if torch.cuda.is_available():
+        print(f"Torch version {torch.__version__} available with {torch.cuda.device_count()} GPUs. Running experiment...")
+        exp.run()
+    else:
+        print(f"Torch version {torch.__version__} does not recognize GPUs. Aborting...")    
 
 if __name__ == "__main__":
     main()
