@@ -29,7 +29,7 @@ def get_search_space_from_args(name: str, mc: ModelConfig):
     return search_space
     
 
-def get_evaluator_from_args(name: str, tc: TrainConfig):
+def get_evaluator_from_args(name: str, tc: TrainConfig, verbose: bool = True):
     r"""
     Returns the evaluator method from the given category of exploration strategies in the input string. 
 
@@ -43,8 +43,8 @@ def get_evaluator_from_args(name: str, tc: TrainConfig):
     elif name == 'one_shot':
         module = OneShotChessModule(tc=tc)
         trainer = get_lightning_trainer()
-        train_dataloader = get_train_dataloader(tc=tc)
-        val_dataloader = get_val_dataloader(tc=tc)
+        train_dataloader = get_train_dataloader(tc=tc, verbose=verbose)
+        val_dataloader = get_val_dataloader(tc=tc, verbose=verbose)
 
         return pl.Lightning(
             module,
@@ -100,7 +100,7 @@ def get_lightning_trainer():
         enable_progress_bar = True
     ) # TODO: Test if this works. Potentially add training config.
 
-def get_train_dataloader(tc: TrainConfig):
+def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
     r"""
     Returns the train dataloader. 
     
@@ -109,12 +109,12 @@ def get_train_dataloader(tc: TrainConfig):
     :param tc: TrainConfig
     :return: DataLoader
     """
-    train_dataset = get_dataset(tc=tc, dataset_type="train", normalize=tc.normalize, verbose=True)
+    train_dataset = get_dataset(tc=tc, dataset_type="train", normalize=tc.normalize, verbose=verbose)
 
     # TODO: Maybe add multiple workers?
     return pl.DataLoader(train_dataset, batch_size=tc.batch_size)
 
-def get_val_dataloader(tc: TrainConfig):
+def get_val_dataloader(tc: TrainConfig, verbose: bool = True):
     r"""
     Returns the validation dataloader.
 
@@ -123,7 +123,7 @@ def get_val_dataloader(tc: TrainConfig):
     :param tc: TrainConfig
     :return: DataLoader
     """
-    val_dataset = get_dataset(tc=tc, dataset_type="val", normalize=tc.normalize, verbose=True)
+    val_dataset = get_dataset(tc=tc, dataset_type="val", normalize=tc.normalize, verbose=verbose)
 
     # TODO: Maybe add multiple workers?
     return pl.DataLoader(val_dataset, batch_size=tc.batch_size)

@@ -93,6 +93,13 @@ def parse_args():
         default=8080
     )
 
+    parser.add_argument( # TODO: Integrate fully
+        "--debug",
+        type=bool,
+        help="Decides whether to run the nas experiment in debug mode. If enabled, the experiment will be more verbose.",
+        default=False
+    )
+
     return parser.parse_args()
 
 def main():
@@ -109,7 +116,7 @@ def main():
     search_space = get_search_space_from_args(args.search_space, mc)
 
     # get evaluator from args
-    evaluator = get_evaluator_from_args(args.category, tc)
+    evaluator = get_evaluator_from_args(args.category, tc, verbose=args.debug)
 
     # get search strategy from args
     search_strategy = get_search_strategy_from_args(args.search_strategy)
