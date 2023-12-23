@@ -43,8 +43,8 @@ def get_evaluator_from_args(name: str, tc: TrainConfig):
     elif name == 'one_shot':
         module = OneShotChessModule(tc=tc)
         trainer = get_lightning_trainer()
-        train_dataloader = get_train_dataloader()
-        val_dataloader = get_val_dataloader()
+        train_dataloader = get_train_dataloader(tc=tc)
+        val_dataloader = get_val_dataloader(tc=tc)
 
         return pl.Lightning(
             module,

@@ -121,5 +121,8 @@ def main():
         #nas_config
     )
 
+    #exp.config.training_service.platform = "remote"
+    exp.run()
+
 if __name__ == "__main__":
     main()
