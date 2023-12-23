@@ -21,4 +21,3 @@ einops
 ml_collections
 vit_pytorch
 nni
-lightning
