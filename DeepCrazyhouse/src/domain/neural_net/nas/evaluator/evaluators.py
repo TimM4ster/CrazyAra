@@ -5,6 +5,7 @@ from torch.nn.modules.loss import MSELoss, CrossEntropyLoss
 from nni.nas.evaluator.pytorch.lightning import LightningModule
 
 from DeepCrazyhouse.configs.train_config import TrainConfig
+from DeepCrazyhouse.src.training.trainer_agent_pytorch import SoftCrossEntropyLoss
 
 @nni.trace
 class OneShotChessModule(LightningModule):
@@ -15,7 +16,10 @@ class OneShotChessModule(LightningModule):
         super().__init__()
         self.tc = tc
         self.value_loss = MSELoss()
-        self.policy_loss = CrossEntropyLoss() 
+        if self.tc.sparse_policy_label:
+            self.policy_loss = CrossEntropyLoss()
+        else:
+            self.policy_loss = SoftCrossEntropyLoss()
 
     def forward(self, x):
         """
