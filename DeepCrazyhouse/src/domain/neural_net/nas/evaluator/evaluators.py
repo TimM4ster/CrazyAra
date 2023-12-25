@@ -46,6 +46,9 @@ class OneShotChessModule(LightningModule):
         # Step 1: Get the data from the batch
         data, value_label, policy_label = batch
 
+        if self.tc.sparse_policy_label:
+            policy_label = policy_label.long()
+
         # Step 2: Forward pass
         value_out, policy_out = self.forward(data)
 
