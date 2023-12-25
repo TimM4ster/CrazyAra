@@ -7,8 +7,9 @@ Created on 20.12.23
 Provides the dataset for the neural architecture search.
 """
 import logging
+import torch
 
-from torch.utils.data.dataset import ConcatDataset
+from torch.utils.data.dataset import ConcatDataset, TensorDataset
 
 from DeepCrazyhouse.configs.train_config import TrainConfig
 from DeepCrazyhouse.src.preprocessing.dataset_loader import load_pgn_dataset
@@ -74,4 +75,8 @@ def _get_tensor_dataset(tc: TrainConfig, dataset_type: str, part_id: int = 0, no
         tc.is_policy_from_plane_data
     )
 
-    return x, y_value, y_policy_prep
+    x = torch.Tensor(x)
+    y_value = torch.Tensor(y_value)
+    y_policy_prep = torch.Tensor(y_policy_prep)
+
+    return TensorDataset(x, y_value, y_policy_prep)
