@@ -74,7 +74,7 @@ class AlphaZeroSearchSpace(ModelSpace):
         :return: Value & Policy Output
         """
         x = self.body(x)
-        return process_value_policy_head(x, self.value_head, self.policy_head)
+        return process_value_policy_head(x, self.value_head, self.policy_head, False, False)
     
 
 class NestedBottleneckResidualBlock(Module):
