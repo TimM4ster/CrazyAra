@@ -83,7 +83,8 @@ def parse_args():
 
     parser.add_argument(
         "--devices",
-        type=list,
+        nargs='+',
+        type=int,
         help="Default: GPU 0. List of devices to use for the nas experiment. If no devices are provided, all available devices will be used.",
         default=[0]
     )
