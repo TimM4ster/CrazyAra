@@ -64,7 +64,7 @@ def _get_tensor_dataset(tc: TrainConfig, dataset_type: str, part_id: int = 0, no
     _, x, y_value, y_policy, _, _ = load_pgn_dataset(
         dataset_type=dataset_type,
         part_id=part_id,
-        verbose=verbose,
+        verbose=False,
         normalize=normalize
     )
 

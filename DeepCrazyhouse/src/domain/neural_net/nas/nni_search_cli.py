@@ -12,13 +12,15 @@ Provides a command-line interface to run neural architecture search using nni. F
 import argparse
 import sys
 import torch
+import logging
+import pickle
 
 sys.path.insert(0, '../../../../../')
 
 from nni.nas.experiment import NasExperiment
 
 from DeepCrazyhouse.src.runtime.color_logger import enable_color_logging
-from DeepCrazyhouse.configs.nas_config import get_nas_configs
+from DeepCrazyhouse.configs.nas_config import get_base_configs, get_nas_config
 from DeepCrazyhouse.src.domain.neural_net.nas.nni_search_cli_util import *
 
 def parse_args():
@@ -68,8 +70,8 @@ def parse_args():
     parser.add_argument(
         "--export-dir", 
         type=str, 
-        help="TODO: Add docstring", 
-        default="./"
+        help="", 
+        default="/root/nni-logs"
     )
 
     parser.add_argument(
@@ -80,10 +82,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--use-multi-gpu",
-        type=bool,
-        help="Decides whether to use multiple gpus for nas experiment.",
-        default=False
+        "--devices",
+        type=list,
+        help="Default: GPU 0. List of devices to use for the nas experiment. If no devices are provided, all available devices will be used.",
+        default=[0]
     )
 
     parser.add_argument(
@@ -109,32 +111,47 @@ def main():
     # enable color logging
     enable_color_logging()
 
-    # configs for nas experiment
-    tc, mc, nc = get_nas_configs(args)
+    # check if gpus are available
+    if torch.cuda.is_available():
+        if args.debug:
+            logging.debug(f"Torch version {torch.__version__} available with {torch.cuda.device_count()} GPUs. Running experiment...")  
+    else: # if no gpus are available, abort
+        sys.exit(f"Torch version {torch.__version__} does not recognize GPUs. Aborting...") 
+
+    # train and model configs
+    tc, mc = get_base_configs(args)
 
     # get search space from args
     search_space = get_search_space_from_args(args.search_space, mc)
 
     # get evaluator from args
-    evaluator = get_evaluator_from_args(args.category, tc, verbose=args.debug)
+    evaluator = get_evaluator_from_args(args, tc)
 
     # get search strategy from args
     search_strategy = get_search_strategy_from_args(args.search_strategy)
+
+    # get nas config from args and search space, evaluator and search strategy
+    nas_config = get_nas_config(args, search_space, evaluator, search_strategy)
 
     # create experiment with search space, evaluator, search strategy and config
     exp = NasExperiment(
         search_space,
         evaluator,
         search_strategy, 
-        #nas_config
+        nas_config
     )
 
-    # check if multi gpu is enabled
-    if torch.cuda.is_available():
-        print(f"Torch version {torch.__version__} available with {torch.cuda.device_count()} GPUs. Running experiment...")
-        exp.run(port=args.port)
-    else:
-        print(f"Torch version {torch.__version__} does not recognize GPUs. Aborting...")    
+    if args.debug:
+        logging.info(f"Visualization on port {args.port}...")
+
+    exp.run(port=args.port, debug=args.debug)
+
+    if args.debug:
+        logging.info("Saving top models...")
+
+    top_models = exp.export_top_models(3, formatter='dict')
+    with open(args.export_dir + 'top_models.pkl', 'wb+') as f:
+        pickle.dump(top_models, f)
 
 if __name__ == "__main__":
     main()

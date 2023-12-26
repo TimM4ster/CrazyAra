@@ -14,17 +14,21 @@ from DeepCrazyhouse.configs.train_config import TrainConfig
 from DeepCrazyhouse.configs.model_config import ModelConfig
 from DeepCrazyhouse.configs.main_config import main_config
 
-def fill_nas_config(nas_config: NasExperimentConfig, args):
+def get_nas_config(args, model_space, evaluator, strategy):
     """
     Fills the nas_config with the necessary configurations. Modify this function to change the configurations for the neural architecture search. Also takes the command-line arguments as input.
 
     :param nas_config: The nas_config to be filled.
     """
     # TODO: Fill nas_config with necessary configurations
+    nas_config = NasExperimentConfig.default(model_space=model_space, evaluator=evaluator, strategy=strategy)
     nas_config.experiment_name = args.experiment_name
-    pass
+    nas_config.trial_code_directory = args.export_dir
+    nas_config.trial_concurrency = len(args.devices)
 
-def get_nas_configs(args, x_val = None):
+    return nas_config
+
+def get_base_configs(args):
     """
     Takes the main_config defined in DeepCrazyhouse/configs/main_config.py and appends the necessary configurations for the neural architecture search.
     """
@@ -33,7 +37,4 @@ def get_nas_configs(args, x_val = None):
 
     mc = ModelConfig()
 
-    nc = NasExperimentConfig()
-    fill_nas_config(nc, args)
-
-    return tc, mc, nc
+    return tc, mc

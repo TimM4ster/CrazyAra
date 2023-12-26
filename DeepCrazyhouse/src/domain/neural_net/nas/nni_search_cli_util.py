@@ -29,20 +29,22 @@ def get_search_space_from_args(name: str, mc: ModelConfig):
     return search_space
     
 
-def get_evaluator_from_args(name: str, tc: TrainConfig, verbose: bool = True):
+def get_evaluator_from_args(args, tc: TrainConfig):
     r"""
     Returns the evaluator method from the given category of exploration strategies in the input string. 
 
     :param name: Name of the category of exploration strategies.
     """
-    logging.info(f"Setting evaluator \"{name}\"")
+    category = args.category
+    verbose = args.debug
+    logging.info(f"Setting evaluator \"{category}\"")
 
-    if name == 'multi_trial':
+    if category == 'multi_trial':
         # TODO: Implement multi_trial evaluator
         raise NotImplementedError("Multi trial evaluator not implemented yet.")
-    elif name == 'one_shot':
+    elif category == 'one_shot':
         module = OneShotChessModule(tc=tc)
-        trainer = get_lightning_trainer()
+        trainer = get_lightning_trainer(args=args)
         train_dataloader = get_train_dataloader(tc=tc, verbose=verbose)
         val_dataloader = get_val_dataloader(tc=tc, verbose=verbose)
 
@@ -53,7 +55,7 @@ def get_evaluator_from_args(name: str, tc: TrainConfig, verbose: bool = True):
             val_dataloader
         )
     else:
-        raise ValueError(f"Category {name} not found.")
+        raise ValueError(f"Category {category} not found.")
 
 def get_search_strategy_from_args(name: str):
     r"""
@@ -89,7 +91,7 @@ def get_search_strategy_from_args(name: str):
 
     return search_strategy
 
-def get_lightning_trainer():
+def get_lightning_trainer(args):
     r"""
     Returns the lightning trainer used for the neural architecture search.
 
@@ -97,8 +99,8 @@ def get_lightning_trainer():
     """
     return pl.Trainer(
         accelerator='gpu', 
-        enable_progress_bar = True,
-        devices = [0]
+        enable_progress_bar = args.debug,
+        devices = args.devices,
     ) # TODO: Test if this works. Potentially add training config.
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):

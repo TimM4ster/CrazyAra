@@ -27,7 +27,7 @@ class OneShotChessModule(LightningModule):
         """
         return self.model(x)
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, _):
         """
         This method is called during the training loop. For every given batch, the loss is calculated and returned.
         For logging epoch-level metrics, one can use self.log() method. Further, the metrics are automatically logged to TensorBoard.
@@ -51,6 +51,7 @@ class OneShotChessModule(LightningModule):
 
         # Step 2: Forward pass
         value_out, policy_out = self.forward(data)
+        value_out.view(-1)
 
         # Step 3: Calculate losses
         # Step 3.1: Calculate value loss
