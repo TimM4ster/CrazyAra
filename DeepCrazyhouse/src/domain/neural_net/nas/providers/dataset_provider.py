@@ -20,8 +20,7 @@ def get_dataset(tc: TrainConfig, dataset_type: str = "train", normalize: bool = 
     TODO
     """
     if dataset_type == "train":
-        if verbose:
-            logging.info("Loading training dataset...")
+        logging.info("Loading training dataset...")
 
         return _get_train_dataset(tc=tc, size=tc.nb_parts, normalize=normalize, verbose=verbose)
     elif dataset_type == "val":

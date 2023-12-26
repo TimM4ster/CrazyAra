@@ -115,7 +115,7 @@ def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
     train_dataset = get_dataset(tc=tc, dataset_type="train", normalize=tc.normalize, verbose=verbose)
 
     # TODO: Maybe add multiple workers?
-    return pl.DataLoader(train_dataset, batch_size=tc.batch_size)
+    return pl.DataLoader(train_dataset, batch_size=tc.batch_size, num_workers=6)
 
 def get_val_dataloader(tc: TrainConfig, verbose: bool = True):
     r"""
@@ -129,4 +129,4 @@ def get_val_dataloader(tc: TrainConfig, verbose: bool = True):
     val_dataset = get_dataset(tc=tc, dataset_type="val", normalize=tc.normalize, verbose=verbose)
 
     # TODO: Maybe add multiple workers?
-    return pl.DataLoader(val_dataset, batch_size=tc.batch_size)
+    return pl.DataLoader(val_dataset, batch_size=tc.batch_size, num_workers=6)
