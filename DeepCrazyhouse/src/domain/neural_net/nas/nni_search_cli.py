@@ -132,7 +132,7 @@ def main():
     # check if multi gpu is enabled
     if torch.cuda.is_available():
         print(f"Torch version {torch.__version__} available with {torch.cuda.device_count()} GPUs. Running experiment...")
-        exp.run()
+        exp.run(port=args.port)
     else:
         print(f"Torch version {torch.__version__} does not recognize GPUs. Aborting...")    
 

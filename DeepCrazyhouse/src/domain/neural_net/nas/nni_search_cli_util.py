@@ -97,7 +97,8 @@ def get_lightning_trainer():
     """
     return pl.Trainer(
         accelerator='gpu', 
-        enable_progress_bar = True
+        enable_progress_bar = True,
+        devices = [0]
     ) # TODO: Test if this works. Potentially add training config.
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
