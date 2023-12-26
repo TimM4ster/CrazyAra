@@ -23,7 +23,6 @@ def get_nas_config(args, model_space, evaluator, strategy):
     # TODO: Fill nas_config with necessary configurations
     nas_config = NasExperimentConfig.default(model_space=model_space, evaluator=evaluator, strategy=strategy)
     nas_config.experiment_name = args.experiment_name
-    nas_config.trial_code_directory = args.export_dir
     nas_config.trial_concurrency = len(args.devices)
 
     return nas_config
