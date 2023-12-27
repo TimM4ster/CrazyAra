@@ -142,6 +142,10 @@ def main():
         nas_config
     )
 
+    exp.config.trial_concurrency = len(args.devices)
+    exp.config.trial_gpu_number = 1
+    exp.config.tuner_gpu_indices = args.devices
+
     if args.debug:
         logging.info(f"Visualization on port {args.port}...")
 

@@ -1,4 +1,10 @@
 import nni
+import os
+import warnings
+import logging
+
+from typing import Union
+from pathlib import Path
 
 import torch.optim as optim
 from torch.nn.modules.loss import MSELoss, CrossEntropyLoss
@@ -12,7 +18,7 @@ class OneShotChessModule(LightningModule):
     """
     Default evaluator for one-shot based neural architecture search with nni. Superclass LightningModule is a wrapper for PyTorch's LightningModule (https://lightning.ai/docs/pytorch/stable/common/lightning_module.html) and simply adds the model to the module.
     """
-    def __init__(self, tc: TrainConfig):
+    def __init__(self, args, tc: TrainConfig, export_onnx: Union[Path, bool, None] = True):
         super().__init__()
         self.tc = tc
         self.value_loss = MSELoss()
@@ -20,6 +26,16 @@ class OneShotChessModule(LightningModule):
             self.policy_loss = CrossEntropyLoss()
         else:
             self.policy_loss = SoftCrossEntropyLoss()
+
+        if export_onnx is None or export_onnx is True:
+            self.export_onnx = Path(os.environ.get('NNI_OUTPUT_DIR', '.')) / 'model.onnx'
+        elif export_onnx:
+            self.export_onnx = Path(export_onnx)
+        else:
+            self.export_onnx = None
+
+        if args.debug and self.export_onnx is not None:
+            logging.info(f'Exporting ONNX model to {self.export_onnx}')
 
     def forward(self, x):
         """
@@ -68,7 +84,7 @@ class OneShotChessModule(LightningModule):
 
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         """
         This method is called during the validation loop. For every batch of the validation data, the loss is calculated and logged to TensorBoard using self.log().
 
@@ -82,6 +98,14 @@ class OneShotChessModule(LightningModule):
 
         # Step 2: Forward pass
         value_out, policy_out = self.forward(data)
+
+        if self.export_onnx is not None:
+            self.export_onnx.parent.mkdir(exist_ok=True)
+            try:
+                self.to_onnx(self.export_onnx, data, export_params=True)
+            except RuntimeError as e:
+                warnings.warn(f'ONNX conversion failed. As a result, visualization might not work. Error message: {e}')
+            self.export_onnx = None
 
         # Step 3: Calculate losses
         # Step 3.1: Calculate value loss

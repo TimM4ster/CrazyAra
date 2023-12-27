@@ -43,7 +43,7 @@ def get_evaluator_from_args(args, tc: TrainConfig):
         # TODO: Implement multi_trial evaluator
         raise NotImplementedError("Multi trial evaluator not implemented yet.")
     elif category == 'one_shot':
-        module = OneShotChessModule(tc=tc)
+        module = OneShotChessModule(args=args, tc=tc)
         trainer = get_lightning_trainer(args=args)
         train_dataloader = get_train_dataloader(tc=tc, verbose=verbose)
         val_dataloader = get_val_dataloader(tc=tc, verbose=verbose)
@@ -100,7 +100,7 @@ def get_lightning_trainer(args):
     return pl.Trainer(
         accelerator='gpu', 
         enable_progress_bar = args.debug,
-        devices = args.devices,
+        #devices = args.devices,
     ) # TODO: Test if this works. Potentially add training config.
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
