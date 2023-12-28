@@ -9,6 +9,7 @@ Config definition file used for the neural architecture search. Appends necessar
 import glob
 
 from nni.nas.experiment import NasExperimentConfig
+from nni.experiment.config.training_services.local import LocalConfig
 
 from DeepCrazyhouse.configs.train_config import TrainConfig
 from DeepCrazyhouse.configs.model_config import ModelConfig
@@ -23,6 +24,7 @@ def get_nas_config(args, model_space, evaluator, strategy):
     # TODO: Fill nas_config with necessary configurations
     nas_config = NasExperimentConfig.default(model_space=model_space, evaluator=evaluator, strategy=strategy)
     nas_config.experiment_name = args.experiment_name
+    nas_config.training_service = LocalConfig(use_active_gpu=True, gpu_indices=args.devices)
 
     return nas_config
 

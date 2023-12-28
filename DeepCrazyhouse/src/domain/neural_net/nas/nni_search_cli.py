@@ -139,15 +139,22 @@ def main():
         search_space,
         evaluator,
         search_strategy, 
-        nas_config
+        #nas_config
     )
-
-    exp.config.trial_concurrency = len(args.devices)
-    exp.config.trial_gpu_number = 1
+    
+    exp.config.training_service
+    exp.config.trial_concurrency = 1
+    exp.config.trial_gpu_number = len(args.devices)
     exp.config.tuner_gpu_indices = args.devices
+    exp.config.training_service.use_active_gpu = True
 
     if args.debug:
         logging.info(f"Visualization on port {args.port}...")
+        logging.debug(f"Experiment name: {args.experiment_name}")
+        logging.debug(f"Training service: {exp.config.training_service}")
+        logging.debug(f"Trial concurrency: {exp.config.trial_concurrency}")
+        logging.debug(f"Trial gpu number: {exp.config.trial_gpu_number}")
+        logging.debug(f"Tuner gpu indices: {exp.config.tuner_gpu_indices}")
 
     exp.run(port=args.port, debug=args.debug)
 
