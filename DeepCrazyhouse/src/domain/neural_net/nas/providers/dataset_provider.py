@@ -36,7 +36,7 @@ def _get_train_dataset(tc: TrainConfig, size: int, normalize: bool = False, verb
     datasets = []
     for part_id in range(size):
         if verbose:
-            logging.info(f"Loading training dataset part {part_id + 1} of {size}...")
+            logging.debug(f"Loading training dataset part {part_id + 1} of {size}...")
 
         datasets.append(
             _get_tensor_dataset(

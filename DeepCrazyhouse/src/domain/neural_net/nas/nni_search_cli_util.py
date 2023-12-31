@@ -31,11 +31,17 @@ def get_search_space_from_args(name: str, mc: ModelConfig):
 
 def get_evaluator_from_args(args, tc: TrainConfig):
     r"""
-    Returns the evaluator method from the given category of exploration strategies in the input string. 
+    Returns the evaluator method for the given arguments and train config.
 
-    :param name: Name of the category of exploration strategies.
+    NOTE: The evaluator for multi-trial strategies is not implemented yet.
+     
+    If the search strategy is a one-shot strategy, the method constructs the evaluator from the search space, the trainer and the dataloaders and wraps them inside a (nni-traced) pytorch-lightning Lightning object.Here, both the search space and the trainer are constructed from the given arguments. The dataloaders for the training and validation dataset are constructed from the given train config.
+
+    :param args: Arguments given to the command line tool.
+    :param tc: TrainConfig
+    :return: Lightning if the search strategy is a one-shot strategy, otherwise None (TODO)
     """
-    category = args.category
+    category = get_category_from_strategy(args.search_strategy)
     verbose = args.debug
     logging.info(f"Setting evaluator \"{category}\"")
 
@@ -44,7 +50,7 @@ def get_evaluator_from_args(args, tc: TrainConfig):
         raise NotImplementedError("Multi trial evaluator not implemented yet.")
     elif category == 'one_shot':
         module = OneShotChessModule(args=args, tc=tc)
-        trainer = get_lightning_trainer(args=args)
+        trainer = get_lightning_trainer(args=args, tc=tc)
         train_dataloader = get_train_dataloader(tc=tc, verbose=verbose)
         val_dataloader = get_val_dataloader(tc=tc, verbose=verbose)
 
@@ -91,7 +97,22 @@ def get_search_strategy_from_args(name: str):
 
     return search_strategy
 
-def get_lightning_trainer(args):
+def get_category_from_strategy(name: str):
+    r"""
+    Returns the category of the given search strategy.
+
+    :param name: Name of the search strategy.
+    """
+    if name in ['random', 'grid', 'evolution', 'tpe', 'pbrl']:
+        category = 'multi_trial'
+    elif name in ['darts', 'enas', 'gumbeldarts', 'random_one_shot', 'proxyless']:
+        category = 'one_shot'
+    else:
+        raise ValueError(f"Search strategy {name} not found. Please refer to https://nni.readthedocs.io/en/stable/nas/exploration_strategy.html for more information.")
+
+    return category
+
+def get_lightning_trainer(args, tc: TrainConfig):
     r"""
     Returns the lightning trainer used for the neural architecture search.
 
@@ -100,8 +121,10 @@ def get_lightning_trainer(args):
     return pl.Trainer(
         accelerator='gpu', 
         enable_progress_bar = args.debug,
-        #devices = args.devices,
-    ) # TODO: Test if this works. Potentially add training config.
+        devices = args.devices, # NOTE: Really important to set this to the correct devices! Otherwise, the trainer will (try to) use ALL available devices.
+        limit_train_batches = tc.batch_steps if args.debug else 1.0,
+        max_epochs = tc.nb_training_epochs if args.debug else 1000,
+    ) 
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
     r"""

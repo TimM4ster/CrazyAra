@@ -27,16 +27,6 @@ class OneShotChessModule(LightningModule):
         else:
             self.policy_loss = SoftCrossEntropyLoss()
 
-        if export_onnx is None or export_onnx is True:
-            self.export_onnx = Path(os.environ.get('NNI_OUTPUT_DIR', '.')) / 'model.onnx'
-        elif export_onnx:
-            self.export_onnx = Path(export_onnx)
-        else:
-            self.export_onnx = None
-
-        if args.debug and self.export_onnx is not None:
-            logging.info(f'Exporting ONNX model to {self.export_onnx}')
-
     def forward(self, x):
         """
         Simply calls the forward method of the model.
@@ -99,14 +89,6 @@ class OneShotChessModule(LightningModule):
         # Step 2: Forward pass
         value_out, policy_out = self.forward(data)
 
-        if self.export_onnx is not None:
-            self.export_onnx.parent.mkdir(exist_ok=True)
-            try:
-                self.to_onnx(self.export_onnx, data, export_params=True)
-            except RuntimeError as e:
-                warnings.warn(f'ONNX conversion failed. As a result, visualization might not work. Error message: {e}')
-            self.export_onnx = None
-
         # Step 3: Calculate losses
         # Step 3.1: Calculate value loss
         value_loss = self.value_loss(value_out, value_label)
@@ -157,8 +139,8 @@ class OneShotChessModule(LightningModule):
         """
         Method is called after the training is finished. It is used to report the final result to nni.
         """
-        if stage == "fit":
-            nni.report_final_result(self.trainer.callback_metrics["val_loss"].item())
+        # if stage == "fit":
+        #     nni.report_final_result(self.trainer.callback_metrics["val_loss"].item())
 
     def get_optimizer(self, tc: TrainConfig):
         """
@@ -167,10 +149,11 @@ class OneShotChessModule(LightningModule):
         :param tc: TrainConfig
         :return: optimizer
         """
+        # TODO: Optimizer should be read from train config
         return optim.SGD(
             self.model.parameters(),
-            lr=tc.max_lr, # TODO: max_lr???
-            momentum=0.9, # TODO: Assign in TrainConfig
+            lr=tc.max_lr, 
+            momentum=0.9, 
             weight_decay=tc.wd,
         )
     

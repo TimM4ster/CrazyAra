@@ -14,6 +14,8 @@ import sys
 import torch
 import logging
 import pickle
+import datetime
+from pathlib import Path
 
 sys.path.insert(0, '../../../../../')
 
@@ -29,7 +31,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Neural architecture search script for searching CNNs or Transformer networks."
                     "Additional configuration settings can be set at:"
-                    "CrazyAra/configs/nas_config.py"
+                    "CrazyAra/configs/nas_config.py",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
     parser.add_argument(
@@ -42,14 +45,6 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--category",
-        type=str,
-        help="Defines the category of the neural architecture search, specifically the category of the exploration strategy. Currently, only the categories \"multi_trial\" and \"one_shot\" are supported. Note that the evaluator is selected accordingly."
-        "For more information please refer to documentation in README.",
-        default="one_shot"
-    )
-
-    parser.add_argument(
         "--search-strategy", 
         type=str,
         help="Defines the search strategy for the neural architecture search. Parsed argument should be one of the following:"
@@ -58,26 +53,17 @@ def parse_args():
         default="darts"
     )
 
-    # TODO: Review and potentially remove
-    parser.add_argument(
-        "--name-initials", 
-        type=str, 
-        help="Name initials which are used to identify running training processes with the rtpt library", 
-        default="XX"
-    )
-
-    # TODO: Add docstring
     parser.add_argument(
         "--export-dir", 
         type=str, 
-        help="", 
-        default="/root/nni-logs"
+        help="The export directory of neural architecture search results. This includes the top models, the experiment logs and the experiments themselves. The argument parsed as the experiment name will be used as a sub-directory name.", 
+        default="/root/nas/"
     )
 
     parser.add_argument(
         "--experiment-name",
         type=str,
-        help="Name of the nas experiment. Used for logging purposes.",
+        help="Name of the nas experiment. This will be used as a sub-directory name in the export directory.",
         default="crazyara_nas"
     )
 
@@ -85,21 +71,22 @@ def parse_args():
         "--devices",
         nargs='+',
         type=int,
-        help="Default: GPU 0. List of devices to use for the nas experiment. If no devices are provided, all available devices will be used.",
+        help="List of devices to use for the nas experiment. If no devices are provided, all available devices will be used.",
         default=[0]
     )
 
+    # TODO: Fix visualization
     parser.add_argument(
         "--port",
         type=int,
-        help="Port for the nas experiment visualization.",
+        help="NOTE: Does not work for one-shot strategies yet. Port for the nas experiment visualization.",
         default=8080
     )
 
-    parser.add_argument( # TODO: Integrate fully
+    parser.add_argument(
         "--debug",
         type=bool,
-        help="Decides whether to run the nas experiment in debug mode. If enabled, the experiment will be more verbose.",
+        help="Decides whether to run the nas experiment in debug mode. If enabled, the experiment will be more verbose, load only one training dataset and only feature a single epoch with 10 batches.",
         default=False
     )
 
@@ -114,13 +101,21 @@ def main():
 
     # check if gpus are available
     if torch.cuda.is_available():
-        if args.debug:
-            logging.debug(f"Torch version {torch.__version__} available with {torch.cuda.device_count()} GPUs. Running experiment...")  
+        logging.info(f"Torch version {torch.__version__} available with {torch.cuda.device_count()} GPUs. Running experiment...")  
     else: # if no gpus are available, abort
         sys.exit(f"Torch version {torch.__version__} does not recognize GPUs. Aborting...") 
 
     # train and model configs
     tc, mc = get_base_configs(args)
+
+    # set export directory
+    tc.export_dir = args.export_dir + args.experiment_name + '/'
+
+    # if debug mode is enabled, only run a single epoch with 10 batches
+    if args.debug:
+        tc.nb_parts = 1
+        tc.nb_training_epochs = 1
+        tc.batch_steps = 10
 
     # get search space from args
     search_space = get_search_space_from_args(args.search_space, mc)
@@ -131,22 +126,15 @@ def main():
     # get search strategy from args
     search_strategy = get_search_strategy_from_args(args.search_strategy)
 
-    # get nas config from args and search space, evaluator and search strategy
-    nas_config = get_nas_config(args, search_space, evaluator, search_strategy)
-
     # create experiment with search space, evaluator, search strategy and config
     exp = NasExperiment(
         search_space,
         evaluator,
-        search_strategy, 
-        #nas_config
+        search_strategy,
     )
-    
-    exp.config.training_service
-    exp.config.trial_concurrency = 1
-    exp.config.trial_gpu_number = len(args.devices)
-    exp.config.tuner_gpu_indices = args.devices
-    exp.config.training_service.use_active_gpu = True
+
+    exp.config.trial_code_directory = tc.export_dir + args.experiment_name + '/'
+    exp.config.experiment_working_directory = tc.export_dir + args.experiment_name + 'experiments/'
 
     if args.debug:
         logging.info(f"Visualization on port {args.port}...")
@@ -158,12 +146,26 @@ def main():
 
     exp.run(port=args.port, debug=args.debug)
 
-    if args.debug:
-        logging.info("Saving top models...")
+    logging.info("Saving top models...")
 
-    top_models = exp.export_top_models(3, formatter='dict')
-    with open(args.export_dir + 'top_models.pkl', 'wb+') as f:
-        pickle.dump(top_models, f)
+    category = get_category_from_strategy(args.search_strategy)
+
+    # one-shot strategies only feature one top model
+    num_top_models = 1 if category == 'one_shot' else 5
+    top_models = exp.export_top_models(num_top_models, formatter='dict')
+
+    if args.debug:
+        logging.debug(f"Top models: {top_models}")
+
+    best_model_export_dir = Path(tc.export_dir + 'best_models/')
+    best_model_export_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    with open(best_model_export_dir / f"{timestamp}_{args.experiment_name}_top_models.pkl", "wb") as f:
+        pickle.dump(top_models, f)        
+
+    logging.info(f"Saved top models to {best_model_export_dir / f'{timestamp}_{args.experiment_name}_top_models.pkl'}")
 
 if __name__ == "__main__":
     main()
