@@ -10,6 +10,7 @@ Provides a command-line interface to run neural architecture search using nni. F
 * CrazyAra/DeepCrazyhouse/configs/nas_config.py
 """
 import argparse
+import shutil
 import sys
 import torch
 import logging
@@ -110,6 +111,7 @@ def main():
 
     # set export directory
     tc.export_dir = args.export_dir + args.experiment_name + '/'
+    Path(tc.export_dir).mkdir(parents=True, exist_ok=True)
 
     # if debug mode is enabled, only run a single epoch with 10 batches
     if args.debug:
@@ -133,8 +135,7 @@ def main():
         search_strategy,
     )
 
-    exp.config.trial_code_directory = tc.export_dir + args.experiment_name + '/'
-    exp.config.experiment_working_directory = tc.export_dir + args.experiment_name + 'experiments/'
+    exp.config.experiment_working_directory = tc.export_dir#
 
     if args.debug:
         logging.info(f"Visualization on port {args.port}...")
@@ -166,6 +167,9 @@ def main():
         pickle.dump(top_models, f)        
 
     logging.info(f"Saved top models to {best_model_export_dir / f'{timestamp}_{args.experiment_name}_top_models.pkl'}")
+
+    # move experiment logs to export directory
+    shutil.move('~/CrazyAra/DeepCrazyhouse/src/domain/neural_net/nas/lightning_logs/', tc.export_dir)
 
 if __name__ == "__main__":
     main()
