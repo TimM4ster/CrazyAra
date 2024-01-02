@@ -8,6 +8,7 @@ Provides the dataset for the neural architecture search.
 """
 import logging
 import torch
+import nni
 
 from torch.utils.data.dataset import ConcatDataset, TensorDataset
 
@@ -15,6 +16,7 @@ from DeepCrazyhouse.configs.train_config import TrainConfig
 from DeepCrazyhouse.src.preprocessing.dataset_loader import load_pgn_dataset
 from DeepCrazyhouse.src.training.train_util import prepare_policy
 
+@nni.trace
 def get_dataset(tc: TrainConfig, dataset_type: str = "train", normalize: bool = False, verbose: bool = True):
     """
     TODO
@@ -28,7 +30,7 @@ def get_dataset(tc: TrainConfig, dataset_type: str = "train", normalize: bool = 
 
         return _get_val_dataset(tc=tc, size=1, normalize=normalize, verbose=verbose)
     
-    
+@nni.trace   
 def _get_train_dataset(tc: TrainConfig, size: int, normalize: bool = False, verbose: bool = True):
     """
     TODO
@@ -50,12 +52,14 @@ def _get_train_dataset(tc: TrainConfig, size: int, normalize: bool = False, verb
     
     return ConcatDataset(datasets)
 
+@nni.trace
 def _get_val_dataset(tc: TrainConfig, size: int, normalize: bool = False, verbose: bool = True):
     """
     TODO
     """
     return _get_tensor_dataset(tc=tc, dataset_type="val", part_id=0, normalize=normalize, verbose=verbose)
 
+@nni.trace
 def _get_tensor_dataset(tc: TrainConfig, dataset_type: str, part_id: int = 0, normalize: bool = False, verbose: bool = True):
     """
     TODO

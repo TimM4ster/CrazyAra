@@ -17,11 +17,14 @@ from DeepCrazyhouse.src.training.trainer_agent_pytorch import SoftCrossEntropyLo
 class OneShotChessModule(LightningModule):
     """
     Default evaluator for one-shot based neural architecture search with nni. Superclass LightningModule is a wrapper for PyTorch's LightningModule (https://lightning.ai/docs/pytorch/stable/common/lightning_module.html) and simply adds the model to the module.
+
+    TODO: Add docstring for parameters
     """
-    def __init__(self, args, tc: TrainConfig, export_onnx: Union[Path, bool, None] = True):
+    def __init__(self, args, tc: TrainConfig, allow_teardown: bool = True):
         super().__init__()
         self.tc = tc
         self.value_loss = MSELoss()
+        self.allow_teardown = allow_teardown
         if self.tc.sparse_policy_label:
             self.policy_loss = CrossEntropyLoss()
         else:
@@ -139,8 +142,8 @@ class OneShotChessModule(LightningModule):
         """
         Method is called after the training is finished. It is used to report the final result to nni.
         """
-        # if stage == "fit":
-        #     nni.report_final_result(self.trainer.callback_metrics["val_loss"].item())
+        if stage == "fit" and self.allow_teardown:
+            nni.report_final_result(self.trainer.callback_metrics["val_loss"].item())
 
     def get_optimizer(self, tc: TrainConfig):
         """

@@ -49,7 +49,7 @@ def get_evaluator_from_args(args, tc: TrainConfig):
         # TODO: Implement multi_trial evaluator
         raise NotImplementedError("Multi trial evaluator not implemented yet.")
     elif category == 'one_shot':
-        module = OneShotChessModule(args=args, tc=tc)
+        module = OneShotChessModule(args=args, tc=tc, allow_teardown=False)
         trainer = get_lightning_trainer(args=args, tc=tc)
         train_dataloader = get_train_dataloader(tc=tc, verbose=verbose)
         val_dataloader = get_val_dataloader(tc=tc, verbose=verbose)
@@ -120,10 +120,10 @@ def get_lightning_trainer(args, tc: TrainConfig):
     """
     return pl.Trainer(
         accelerator='gpu', 
-        enable_progress_bar = args.debug,
+        enable_progress_bar = True,
         devices = args.devices, # NOTE: Really important to set this to the correct devices! Otherwise, the trainer will (try to) use ALL available devices.
         limit_train_batches = tc.batch_steps if args.debug else 1.0,
-        max_epochs = tc.nb_training_epochs if args.debug else 1000,
+        max_epochs = tc.nb_training_epochs,
     ) 
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
@@ -137,7 +137,6 @@ def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
     """
     train_dataset = get_dataset(tc=tc, dataset_type="train", normalize=tc.normalize, verbose=verbose)
 
-    # TODO: Maybe add multiple workers?
     return pl.DataLoader(train_dataset, batch_size=tc.batch_size, num_workers=6)
 
 def get_val_dataloader(tc: TrainConfig, verbose: bool = True):
@@ -151,5 +150,4 @@ def get_val_dataloader(tc: TrainConfig, verbose: bool = True):
     """
     val_dataset = get_dataset(tc=tc, dataset_type="val", normalize=tc.normalize, verbose=verbose)
 
-    # TODO: Maybe add multiple workers?
     return pl.DataLoader(val_dataset, batch_size=tc.batch_size, num_workers=6)
