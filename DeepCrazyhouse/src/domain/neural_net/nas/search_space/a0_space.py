@@ -31,7 +31,7 @@ class AlphaZeroSearchSpace(ModelSpace):
         self.op_candidates = OrderedDict([
             ("res_block", ResidualBlock(channels, act_type, use_se)),
             ("nbrn", NestedBottleneckResidualBlock(channels, act_type, use_se)),
-            ("mobile_conv", MobileConvolutionBlock(channels, act_type, use_se)),
+            ("mobile_conv", MobileConvolutionBlock(channels)),
             ("ntb", NTB(channels, channels)),
             ("ncb", NCB(channels, channels))
         ])

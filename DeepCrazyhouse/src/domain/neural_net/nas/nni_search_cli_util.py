@@ -12,6 +12,8 @@ import nni
 import nni.nas.evaluator.pytorch.lightning as pl
 import nni.nas.strategy as nas_strategy
 
+from pytorch_lightning.loggers import TensorBoardLogger
+
 from DeepCrazyhouse.src.domain.neural_net.nas.search_space.a0_space import AlphaZeroSearchSpace
 from DeepCrazyhouse.src.domain.neural_net.nas.evaluator.evaluators import OneShotChessModule
 from DeepCrazyhouse.configs.train_config import TrainConfig
@@ -123,18 +125,20 @@ def get_lightning_trainer(args, tc: TrainConfig):
 
     :return: Lightning trainer
     """
-    trainer = pl.Trainer(
+    logger = TensorBoardLogger(
+        save_dir = tc.export_dir,
+        version = 1,
+        name = "lightning_logs"
+    )
+
+    return pl.Trainer(
         accelerator='gpu', 
         enable_progress_bar = True,
         devices = args.devices, # NOTE: Really important to set this to the correct devices! Otherwise, the trainer will (try to) use ALL available devices.
         limit_train_batches = tc.batch_steps if args.debug else 1.0,
         max_epochs = tc.nb_training_epochs,
+        logger = logger,
     ) 
-    trainer_log_dir = Path(tc.export_dir + f'{args.experiment_name}/lightning_logs/')
-    trainer_log_dir.mkdir(parents=True, exist_ok=True)
-
-    trainer.log_dir = trainer_log_dir
-    return trainer
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
     r"""
