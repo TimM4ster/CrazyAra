@@ -10,23 +10,19 @@ Provides a command-line interface to run neural architecture search using nni. F
 * CrazyAra/DeepCrazyhouse/configs/nas_config.py
 """
 import argparse
-import shutil
 import sys
 import torch
 import logging
-import pickle
-import datetime
 from pathlib import Path
 
 sys.path.insert(0, '../../../../../')
 
 from nni.nas.experiment import NasExperiment
-from nni.nas.space import model_context
 
 from DeepCrazyhouse.src.runtime.color_logger import enable_color_logging
-from DeepCrazyhouse.configs.nas_config import get_base_configs, get_nas_config
+from DeepCrazyhouse.configs.nas_config import get_base_configs
 from DeepCrazyhouse.src.domain.neural_net.nas.nni_search_cli_util import *
-from DeepCrazyhouse.src.domain.neural_net.nas.search_space.a0_nbrn_space import AlphaZeroSearchSpace
+
 
 def parse_args():
     """Defines the command-line arguments for the nni search and parses them."""
@@ -149,39 +145,8 @@ def main():
 
     exp.run(port=args.port, debug=args.debug)
 
-    logging.info("Saving top models...")
-
-    category = get_category_from_strategy(args.search_strategy)
-
-    # one-shot strategies only feature one top model
-    num_top_models = 1 if category == 'one_shot' else 5
-    top_models = exp.export_top_models(num_top_models, formatter='dict')
-
-    if args.debug:
-        logging.debug(f"Top models: {top_models}")
-
-    best_model_export_dir = Path(tc.export_dir + 'best_models/')
-    best_model_export_dir.mkdir(parents=True, exist_ok=True)
-
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
-
-    with open(best_model_export_dir / f"{timestamp}_{args.experiment_name}_top_models.pkl", "wb") as f:
-        pickle.dump(top_models, f)        
-
-    logging.info(f"Saved top models to {best_model_export_dir / f'{timestamp}_{args.experiment_name}_top_models.pkl'}")
-
-    logging.info("Starting validation of top model...")
-
-    top_model = top_models[0]
-
-    with model_context(top_model):
-        final_model = AlphaZeroSearchSpace()
-
-    evaluator = get_evaluator_from_args(args, tc)
-    evaluator.fit(final_model)
-
-    # move experiment logs to export directory
-    shutil.move('/root/CrazyAra/DeepCrazyhouse/src/domain/neural_net/nas/lightning_logs/', tc.export_dir)
+    # export top models
+    export_top_models(args, tc, exp)
 
 if __name__ == "__main__":
     main()

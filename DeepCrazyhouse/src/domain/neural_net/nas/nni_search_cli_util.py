@@ -3,11 +3,16 @@ TODO: Add docstring
 """
 
 import logging
+import datetime
+import pickle
+import json
+from pathlib import Path
 
+import nni
 import nni.nas.evaluator.pytorch.lightning as pl
 import nni.nas.strategy as nas_strategy
 
-from DeepCrazyhouse.src.domain.neural_net.nas.search_space.a0_nbrn_space import AlphaZeroSearchSpace
+from DeepCrazyhouse.src.domain.neural_net.nas.search_space.a0_space import AlphaZeroSearchSpace
 from DeepCrazyhouse.src.domain.neural_net.nas.evaluator.evaluators import OneShotChessModule
 from DeepCrazyhouse.configs.train_config import TrainConfig
 from DeepCrazyhouse.configs.model_config import ModelConfig
@@ -118,13 +123,18 @@ def get_lightning_trainer(args, tc: TrainConfig):
 
     :return: Lightning trainer
     """
-    return pl.Trainer(
+    trainer = pl.Trainer(
         accelerator='gpu', 
         enable_progress_bar = True,
         devices = args.devices, # NOTE: Really important to set this to the correct devices! Otherwise, the trainer will (try to) use ALL available devices.
         limit_train_batches = tc.batch_steps if args.debug else 1.0,
         max_epochs = tc.nb_training_epochs,
     ) 
+    trainer_log_dir = Path(tc.export_dir + f'{args.experiment_name}/lightning_logs/')
+    trainer_log_dir.mkdir(parents=True, exist_ok=True)
+
+    trainer.log_dir = trainer_log_dir
+    return trainer
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
     r"""
@@ -151,3 +161,33 @@ def get_val_dataloader(tc: TrainConfig, verbose: bool = True):
     val_dataset = get_dataset(tc=tc, dataset_type="val", normalize=tc.normalize, verbose=verbose)
 
     return pl.DataLoader(val_dataset, batch_size=tc.batch_size, num_workers=6)
+
+def export_top_models(args, tc: TrainConfig, exp: nni.Experiment):
+    r"""
+    Exports the top models of the given experiment. The export directory is ``tc.export_dir + 'best_models/'``. The top models are exported as both, a pickle file and a json file.
+
+    :param exp: NNI experiment
+    """
+    logging.info("Saving top models...")
+
+    category = get_category_from_strategy(args.search_strategy)
+
+    # one-shot strategies only feature one top model
+    num_top_models = 1 if category == 'one_shot' else 5
+    top_models = exp.export_top_models(num_top_models, formatter='dict')
+
+    if args.debug:
+        logging.debug(f"Top models: {top_models}")
+
+    best_model_export_dir = Path(tc.export_dir + 'best_models/')
+    best_model_export_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    with open(best_model_export_dir / f"{timestamp}_{args.experiment_name}_top_models.pkl", "wb") as f:
+        pickle.dump(top_models, f)  
+
+    with open(best_model_export_dir / f"{timestamp}_{args.experiment_name}_top_models.json", "w") as f:
+        json.dump(top_models, f)
+
+    logging.info(f"Saved top models to {best_model_export_dir / f'{timestamp}_{args.experiment_name}_top_models.pkl'} and {best_model_export_dir / f'{timestamp}_{args.experiment_name}_top_models.json'}")

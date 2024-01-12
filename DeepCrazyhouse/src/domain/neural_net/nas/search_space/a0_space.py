@@ -4,14 +4,18 @@ Created on 27.11.23
 @project: CrazyAra
 @author: TimM4ster
 
-Neural Architecture Search model space for A0-NBRN
+Neural Architecture Search model space for AlphaZero-based neural networks. Note that this model space only affects the architecture of the neural network, not the hyperparameters.
 """
+from collections import OrderedDict
 from nni.nas.nn.pytorch import ModelSpace, LayerChoice, ParametrizedModule, Repeat
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.builder_util import get_act, _Stem, _ValueHead, _PolicyHead, process_value_policy_head
-from torch.nn import Module, Sequential, Conv2d, BatchNorm2d
+from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.next_vit_official_modules import NTB, NCB
+from torch.nn import Module, Sequential, Conv2d, BatchNorm2d, ReLU6
 
 class AlphaZeroSearchSpace(ModelSpace):
-    # TODO 1: Add docstring
+    """
+    Search space for AlphaZero-based neural networks. This search space only features a layer choice for the residual blocks.
+    """
     
     def __init__(
             self,
@@ -24,13 +28,18 @@ class AlphaZeroSearchSpace(ModelSpace):
     ):
         super(AlphaZeroSearchSpace, self).__init__()
 
+        self.op_candidates = OrderedDict([
+            ("res_block", ResidualBlock(channels, act_type, use_se)),
+            ("nbrn", NestedBottleneckResidualBlock(channels, act_type, use_se)),
+            ("mobile_conv", MobileConvolutionBlock(channels, act_type, use_se)),
+            ("ntb", NTB(channels, channels)),
+            ("ncb", NCB(channels, channels))
+        ])
+
         res_blocks = Repeat(
             lambda index: 
             LayerChoice(
-                [
-                    NestedBottleneckResidualBlock(channels, act_type, use_se), 
-                    ResidualBlock(channels, act_type, use_se)
-                ],
+                self.op_candidates,
                 label=f"res_block_{index}"
             ), 
             num_res_blocks
@@ -172,3 +181,57 @@ class ResidualBlock(Module):
     def forward(self, x):
         out = self.body(x)
         return x + self.body(out)
+    
+
+class MobileConvolutionBlock(Module):
+    # TODO 3: DOCSTRING
+
+    def __init__(self, in_channels: int = 256, expand_ratio: int = 6, use_se: bool = False):
+        super(MobileConvolutionBlock, self).__init__()
+
+        hidden_channels = int(in_channels * expand_ratio)
+
+        expansion = Sequential(
+            Conv2d(
+                in_channels=in_channels, 
+                out_channels=hidden_channels, 
+                kernel_size=(1, 1), 
+                padding=(0, 0),
+                bias=False
+            ),
+            BatchNorm2d(num_features=hidden_channels),
+            ReLU6(inplace=True)
+        )
+
+        depthwise = Sequential(
+            Conv2d(
+                in_channels=hidden_channels, 
+                out_channels=hidden_channels, 
+                kernel_size=(3, 3), 
+                padding=(1, 1),
+                groups=hidden_channels,
+                bias=False
+            ),
+            BatchNorm2d(num_features=hidden_channels),
+            ReLU6(inplace=True)
+        )
+
+        reduction = Sequential(
+            Conv2d(
+                in_channels=hidden_channels, 
+                out_channels=in_channels, 
+                kernel_size=(1, 1), 
+                padding=(0, 0),
+                bias=False
+            ),
+            BatchNorm2d(num_features=in_channels),
+        )
+
+        self.body = Sequential(
+            expansion,
+            depthwise,
+            reduction
+        ) 
+
+    def forward(self, x):
+        return x + self.body(x)
