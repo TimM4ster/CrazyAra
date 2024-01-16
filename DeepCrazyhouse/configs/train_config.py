@@ -15,7 +15,7 @@ class TrainConfig:
 
     # div factor is a constant which can be used to reduce the batch size and learning rate respectively
     # use a value higher 1 if you encounter memory allocation errors
-    div_factor: int = 1
+    div_factor: int = 2
 
     # 1024 # the batch_size needed to be reduced to 1024 in order to fit in the GPU 1080Ti
     # 4096 was originally used in the paper -> works slower for current GPU
@@ -90,7 +90,7 @@ class TrainConfig:
     normalize: bool = True  # define whether to normalize input data to [01]
 
     # how many epochs the network will be trained each time there is enough new data available
-    nb_training_epochs: int = 7
+    nb_training_epochs: int = 20
 
     # gradient scaling for the plys to end output
     plys_to_end_loss_factor: float = 0.002

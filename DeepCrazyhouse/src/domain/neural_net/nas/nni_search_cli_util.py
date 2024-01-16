@@ -138,6 +138,7 @@ def get_lightning_trainer(args, tc: TrainConfig):
         limit_train_batches = tc.batch_steps if args.debug else 1.0,
         max_epochs = tc.nb_training_epochs,
         logger = logger,
+        strategy='ddp_find_unused_parameters_true',
     ) 
 
 def get_train_dataloader(tc: TrainConfig, verbose: bool = True):
