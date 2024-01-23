@@ -32,6 +32,7 @@ from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.next_vit_officia
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.a0_resnet import AlphaZeroResnet, get_alpha_zero_model
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.alpha_vile import get_alpha_vile_model
 from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.a0_nbrn import get_nbrn_alpha_zero_model, AlphaZeroNBRN
+from DeepCrazyhouse.src.domain.neural_net.architectures.pytorch.nasnet import get_nasnet_model
 from DeepCrazyhouse.configs.train_config import TrainConfig, TrainObjects
 from DeepCrazyhouse.configs.model_config import ModelConfig
 from DeepCrazyhouse.src.preprocessing.dataset_loader import load_pgn_dataset
@@ -171,6 +172,8 @@ def get_default_model(model_type: str, args: Args):
         return get_next_vit_model(args)
     elif model_type == 'a0_nbrn':
         return get_nbrn_alpha_zero_model(args)
+    elif model_type == 'nas':
+        return get_nasnet_model(args, model_path="/root/nas/nas_48k/best_models/")
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 
