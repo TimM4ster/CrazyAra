@@ -35,6 +35,10 @@ def get_base_configs(args):
     tc = TrainConfig()
     tc.nb_parts = len(glob.glob(main_config['planes_train_dir'] + '**/*'))
 
+    tc.latency_loss_factor = 2e-1 if args.search_strategy == 'proxyless' else 0
+    
+    tc.policy_loss_factor -= tc.latency_loss_factor
+
     mc = ModelConfig()
 
     return tc, mc

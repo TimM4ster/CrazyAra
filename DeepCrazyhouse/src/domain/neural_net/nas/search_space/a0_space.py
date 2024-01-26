@@ -36,6 +36,14 @@ class AlphaZeroSearchSpace(ModelSpace):
             ("ncb", NCB(channels, channels))
         ])
 
+        self.latency_dict = {
+            0: 0.30431270599365237,
+            1: 1.0131144523620606,
+            2: 0.4259181022644043,
+            3: 2.566568851470947,
+            4: 0.6679224967956542
+        }
+
         res_blocks = Repeat(
             lambda index: 
             LayerChoice(

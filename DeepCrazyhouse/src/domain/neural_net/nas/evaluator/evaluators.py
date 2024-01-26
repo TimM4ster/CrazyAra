@@ -7,6 +7,7 @@ from typing import Union
 from pathlib import Path
 
 import torch.optim as optim
+from torch.nn import Softmax
 from torch.nn.modules.loss import MSELoss, CrossEntropyLoss
 from nni.nas.evaluator.pytorch.lightning import LightningModule
 
@@ -24,6 +25,8 @@ class OneShotChessModule(LightningModule):
         super().__init__()
         self.tc = tc
         self.value_loss = MSELoss()
+        self.softmax = Softmax()
+        self.use_lat_loss = True if self.strategy == "proxyless" else False
         self.allow_teardown = allow_teardown
         if self.tc.sparse_policy_label:
             self.policy_loss = CrossEntropyLoss()
@@ -71,8 +74,13 @@ class OneShotChessModule(LightningModule):
         policy_loss = self.policy_loss(policy_out, policy_label)
         self.log("policy_loss", policy_loss)
 
-        # Step 3.3: Calculate combined loss
-        loss = self.get_total_loss(value_loss, policy_loss)
+        # Step 3.3: Calculate latency loss if strategy is proxyless
+        latency_loss = self.latency_loss()
+        if self.use_lat_loss:
+            self.log("latency_loss", latency_loss)
+
+        # Step 3.4: Calculate combined loss
+        loss = self.get_total_loss(value_loss, policy_loss, latency_loss)
         self.log("loss", loss)
 
         return loss
@@ -183,7 +191,35 @@ class OneShotChessModule(LightningModule):
             last_epoch=-1,
         )
     
-    def get_total_loss(self, value_loss, policy_loss):
+    def latency_loss(self):
+        """
+        Returns the latency loss used for the neural architecture search. The latency loss is calculated by adding the latency loss of all layers.
+
+        :return: latency loss
+        """
+        lat_loss = 0
+
+        if not self.use_lat_loss:
+            return lat_loss
+
+        for name, param in self.model.named_parameters():
+            if "_arch_alpha" in name:
+                softmax = self.softmax(param)
+                for i, p in enumerate(softmax):
+                    try:
+                        latency = self.model.latency_dict[i]
+                    except AttributeError:
+                        warnings.warn(
+                            "Latency loss is not calculated due to missing latency_dict in model implementation."
+                        )
+                        self.use_lat_loss = False
+                        return 0
+                    lat_loss += p * latency
+
+        return lat_loss
+
+    
+    def get_total_loss(self, value_loss, policy_loss, latency_loss):
         """
         Returns the total loss used for the neural architecture search. Currently, the total loss is calculated by adding the weighted value loss and the policy loss.
 
@@ -192,4 +228,5 @@ class OneShotChessModule(LightningModule):
         :param tc: TrainConfig
         :return: total loss
         """
-        return value_loss * self.tc.val_loss_factor + policy_loss * self.tc.policy_loss_factor
+
+        return value_loss * self.tc.val_loss_factor + policy_loss * self.tc.policy_loss_factor + latency_loss * self.tc.latency_loss_factor
